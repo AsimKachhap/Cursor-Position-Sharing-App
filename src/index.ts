@@ -1,10 +1,19 @@
 import express from "express";
+import http from "node:http";
+import url from "node:url";
 import { WebSocketServer } from "ws";
 
-const wss = new WebSocketServer({ port: 8080 });
+const httpServer = http.createServer();
+const PORT = process.env.PORT || 8080;
 
-wss.on("connection", (ws) => {
+const wss = new WebSocketServer({ server: httpServer });
+
+wss.on("connection", (ws, req) => {
   console.log("New Client connected");
+  const reqUrl = new URL(req.url!, `http://${req.headers.host}`); // new URL() expects a complete url path instead of elative path; req.url generally gives a relative path. Hence  we use `http://${req.headers.host}` to create a complete url path.
+  const username = reqUrl.searchParams.get("username");
+
+  console.log("Username: ", username);
   ws.on("error", () => {
     console.log("Error");
   });
@@ -24,4 +33,8 @@ wss.on("connection", (ws) => {
   });
 
   ws.send("Something");
+});
+
+httpServer.listen(PORT, () => {
+  console.log(`Server is up and running on PORT: ${PORT}`);
 });
